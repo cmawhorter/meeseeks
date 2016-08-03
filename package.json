@@ -1,5 +1,5 @@
 {
-  "version": "1.0.0",
+  "version": "1.0.0-alpha1",
   "name": "meeseeks",
   "description": "Simplifies creating AWS Lambda microservices by creating a standard format and handling some of th gruntwork.",
   "author": {
