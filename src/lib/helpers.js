@@ -16,7 +16,7 @@ var helpers = module.exports = {
 
       // Freeze prop if it is an object
       if (typeof prop == 'object' && prop !== null)
-        deepFreeze(prop);
+        helpers.deepFreeze(prop);
     });
 
     // Freeze self (no-op if already frozen)
