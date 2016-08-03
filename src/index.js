@@ -15,7 +15,7 @@ function Meeseeks(opts) {
   this.opts.skipJwtValidation = opts.skipJwtValidation || (process.env.NODE_ENV === 'development');
   this.opts.logLevel = opts.logLevel || helpers.logLevelFromEnv();
   this.log = log.getLogger(this.opts.name);
-  this.log.setLogLevel(this.opts.logLevel);
+  this.log.setLevel(this.opts.logLevel);
   Object.defineProperty(this, 'handler', {
     value: function(event, context) {
       this.debug('Event Received', JSON.stringify(event, null, 2));
