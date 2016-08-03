@@ -54,40 +54,46 @@ Meeseeks.prototype._invoke = function(meeseeksContext, origin) {
     this.log.warn('No listener exists for "' + meeseeksContext.name + '"');
     return;
   }
+  var done = this._callback.bind(this, meeseeksContext, origin.context);
   this.log.info('Invoking "' + meeseeksContext.name + '"');
   this.log.debug('Context', JSON.stringify(meeseeksContext, null, 2));
-  async.waterfall([
-    function validate(next) {
-      if (listener.validation) {
-        _this.log.debug('Validating');
-        listener.validation(meeseeksContext, function(err) {
-          if (err) return next(err);
+  if (typeof listener === 'function') {
+    listener(meeseeksContext, done);
+  }
+  else {
+    async.waterfall([
+      function validate(next) {
+        if (listener.validation) {
+          _this.log.debug('Validating');
+          listener.validation(meeseeksContext, function(err) {
+            if (err) return next(err);
+            next(null);
+          });
+        }
+        else {
           next(null);
-        });
-      }
-      else {
-        next(null);
-      }
-    },
-    function act(next) {
-      if (listener.action) {
-        _this.log.debug('Action');
-        listener.action(meeseeksContext, next);
-      }
-      else {
-        next(null);
-      }
-    },
-    function respond() { // act args are designed to be dynamic
-      if (listener.response) {
-        _this.log.debug('Transforming response');
-        listener.response.apply(listener, arguments);
-      }
-      else {
-        arguments[arguments.length - 1](null); // next
-      }
-    },
-  ], _this._callback.bind(_this, meeseeksContext, origin.context));
+        }
+      },
+      function act(next) {
+        if (listener.action) {
+          _this.log.debug('Action');
+          listener.action(meeseeksContext, next);
+        }
+        else {
+          next(null);
+        }
+      },
+      function respond() { // act args are designed to be dynamic
+        if (listener.response) {
+          _this.log.debug('Transforming response');
+          listener.response.apply(listener, arguments);
+        }
+        else {
+          arguments[arguments.length - 1](null); // next
+        }
+      },
+    ], done);
+  }
 };
 
 Meeseeks.prototype._callback = function(meeseeksContext, context, err, res) {
