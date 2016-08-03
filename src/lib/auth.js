@@ -3,7 +3,7 @@
 var jwt = require('jsonwebtoken');
 
 var auth = module.exports = {
-  verify: function(signingToken, id_token, decodeOnly) {
+  verify: function(id_token, signingToken, decodeOnly) {
     var decoded;
     if (decodeOnly) {
       decoded = jwt.decode(id_token);

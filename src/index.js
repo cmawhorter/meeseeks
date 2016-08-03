@@ -18,7 +18,7 @@ function Meeseeks(opts) {
   this.log.setLevel(this.opts.logLevel);
   Object.defineProperty(this, 'handler', {
     value: function(event, context) {
-      this.debug('Event Received', JSON.stringify(event, null, 2));
+      _this.log.debug('Event Received', JSON.stringify(event, null, 2));
       var meeseeksContext = _this.createContextFromEvent(event);
       var origin = { event: event, context: context };
       _this._invoke(meeseeksContext, origin);
@@ -35,7 +35,8 @@ Meeseeks.prototype.define = function(name, definition) {
 };
 
 Meeseeks.prototype.createContextFromEvent = function(event) {
-  var authorization = auth.verify(this.opts.jwtSigningToken, event.token, this.opts.skipJwtValidation);
+  var authorization = auth.verify(event.authorization, this.opts.jwtSigningToken, this.opts.skipJwtValidation);
+  this.log.debug('Authorization: ', JSON.stringify(authorization, null, 2));
   var meeseeksContext = {
     name: event.method,
     body: event.body || {},
