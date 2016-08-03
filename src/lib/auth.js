@@ -3,9 +3,9 @@
 var jwt = require('jsonwebtoken');
 
 var auth = module.exports = {
-  verify: function(signingToken, id_token) {
+  verify: function(signingToken, id_token, decodeOnly) {
     var decoded;
-    if (IS_DEV) {
+    if (decodeOnly) {
       decoded = jwt.decode(id_token);
     }
     else {

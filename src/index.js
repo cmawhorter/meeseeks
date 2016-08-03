@@ -12,6 +12,7 @@ function Meeseeks(opts) {
   this.opts = {};
   this.opts.name = opts.name || ('meeseeks:' + Math.random());
   this.opts.jwtSigningToken = opts.jwtSigningToken || '';
+  this.opts.skipJwtValidation = opts.skipJwtValidation || (process.env.NODE_ENV === 'development');
   this.opts.logLevel = opts.logLevel || helpers.logLevelFromEnv();
   this.log = log.getLogger(this.opts.name);
   this.log.setLogLevel(this.opts.logLevel);
@@ -34,7 +35,7 @@ Meeseeks.prototype.define = function(name, definition) {
 };
 
 Meeseeks.prototype.createContextFromEvent = function(event) {
-  var authorization = auth.verify(this.opts.jwtSigningToken, event.token);
+  var authorization = auth.verify(this.opts.jwtSigningToken, event.token, this.opts.skipJwtValidation);
   var meeseeksContext = {
     name: event.method,
     body: event.body || {},
