@@ -1,0 +1,38 @@
+{
+  "version": "1.0.0",
+  "name": "meeseeks",
+  "description": "Simplifies creating AWS Lambda microservices by creating a standard format and handling some of th gruntwork.",
+  "author": {
+    "name": "Cory Mawhorter",
+    "email": "cory.mawhorter@gmail.com",
+    "url": "http://www.mawhorter.net/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/cmawhorter/meeseeks.git"
+  },
+  "bugs": {
+    "url": "https://github.com/cmawhorter/meeseeks/issues"
+  },
+  "license": "MIT",
+  "main": "src/index.js",
+  "engines": {
+    "node": ">= 4.3.0"
+  },
+  "dependencies": {
+    "async": "^2.0.1",
+    "jsonwebtoken": "^7.1.7",
+    "loglevel": "^1.4.1"
+  },
+  "devDependencies": {
+    "mocha": "*"
+  },
+  "keywords": [
+    "aws",
+    "lambda",
+    "microservice",
+    "jwt",
+    "api",
+    "cognito"
+  ]
+}
