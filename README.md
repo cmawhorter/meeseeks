@@ -2,6 +2,8 @@
 
 A very basic framework for developing microservices on AWS Lambda.  Support for JWT baked in.
 
+Demo project wip [here](https://github.com/cmawhorter/meeseeks-demo).
+
 ## Getting Started
 
 ### 1. Create your lambda function project
