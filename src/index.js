@@ -41,7 +41,7 @@ Meeseeks.prototype.createContextFromEvent = function(event) {
     name: event.method,
     body: event.body || {},
     authorization: authorization,
-    identity: authorization.sub,
+    identity: authorization ? authorization.sub : null,
     received: helpers.now(),
   };
   helpers.deepFreeze(meeseeksContext);
