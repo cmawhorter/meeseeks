@@ -21,8 +21,10 @@
   },
   "dependencies": {
     "async": "^2.0.1",
+    "base-x": "^2.0.2",
+    "bunyan": "^1.8.5",
     "jsonwebtoken": "^7.1.7",
-    "loglevel": "^1.4.1"
+    "uuid": "^3.0.1"
   },
   "devDependencies": {
     "mocha": "*"
