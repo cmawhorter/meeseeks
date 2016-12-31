@@ -5,7 +5,6 @@ var async = require('async');
 var Logger = require('./lib/logger.js');
 var RequestId = require('./lib/request-id.js');
 var auth = require('./lib/auth.js');
-var helpers = require('./lib/helpers.js');
 
 function Meeseeks(opts) {
   var _this = this;
@@ -14,13 +13,13 @@ function Meeseeks(opts) {
   this.opts.name = opts.name || ('meeseeks:' + Math.random());
   this.opts.jwtSigningToken = opts.jwtSigningToken || '';
   this.opts.skipJwtValidation = opts.skipJwtValidation || (process.env.NODE_ENV === 'development');
-  this.opts.logLevel = opts.logLevel || helpers.logLevelFromEnv();
+  this.opts.logLevel = opts.logLevel || 'debug';
   this.opts.requestIdGenerator = opts.requestIdGenerator || RequestId(opts.requestIdOptions || {});
   this.log = Logger(this.opts);
   Object.defineProperty(this, 'handler', {
     value: function(event, context) {
       var meeseeksContext = _this.createContextFromEvent(event);
-      meeseeksContext.log.debug('Event Received', JSON.stringify(event, null, 2));
+      meeseeksContext.log.debug({ event: event }, 'Event Received');
       var origin = { event: event, context: context };
       _this._invoke(meeseeksContext, origin);
     },
@@ -39,13 +38,13 @@ Meeseeks.prototype.createContextFromEvent = function(event) {
   var requestId = event.requestId || this.opts.requestIdGenerator();
   var contextualLogger = this.log.child({ requestId: requestId });
   var authorization = auth.verify(event.authorization, this.opts.jwtSigningToken, this.opts.skipJwtValidation);
-  contextualLogger.debug('Authorization: ', JSON.stringify(authorization, null, 2));
+  contextualLogger.debug({ auth: authorization }, 'Authorization: ');
   var meeseeksContext = {
     name: event.method,
     body: event.body || {},
     authorization: null, //authorization,
     identity: authorization ? authorization.sub : null,
-    received: helpers.now(),
+    received: new Date().toISOString(),
     requestId: requestId,
   };
   Object.defineProperty(meeseeksContext, 'log', {
@@ -65,8 +64,7 @@ Meeseeks.prototype._invoke = function(meeseeksContext, origin) {
     return;
   }
   var done = this._callback.bind(this, meeseeksContext, origin.context);
-  meeseeksContext.log.info('Invoking "' + meeseeksContext.name + '"');
-  meeseeksContext.log.debug('Context', JSON.stringify(meeseeksContext, null, 2));
+  meeseeksContext.log.debug({ context: meeseeksContext }, 'Invoking "' + meeseeksContext.name + '"');
   if (typeof listener === 'function') {
     listener(meeseeksContext, done);
   }
@@ -108,12 +106,10 @@ Meeseeks.prototype._invoke = function(meeseeksContext, origin) {
 
 Meeseeks.prototype._callback = function(meeseeksContext, context, err, res) {
   if (err) {
-    meeseeksContext.log.warn('Completed "' + meeseeksContext.name + '" with error');
-    meeseeksContext.log.debug('Result: ', JSON.stringify(err, null, 2));
+    meeseeksContext.log.warn({ err: err }, 'Completed "' + meeseeksContext.name + '" with error');
   }
   else {
-    meeseeksContext.log.info('Completed "' + meeseeksContext.name + '"');
-    meeseeksContext.log.debug('Result: ', JSON.stringify(res, null, 2));
+    meeseeksContext.log.debug({ res: res }, 'Completed "' + meeseeksContext.name + '"');
   }
   context.done(err, res);
 };
