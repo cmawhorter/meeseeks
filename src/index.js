@@ -47,8 +47,11 @@ Meeseeks.prototype.createContextFromEvent = function(event) {
     identity: authorization ? authorization.sub : null,
     received: helpers.now(),
     requestId: requestId,
-    log: contextualLogger,
   };
+  Object.defineProperty(meeseeksContext, 'log', {
+    enumerable: false,
+    value: contextualLogger,
+  })
   Object.freeze(meeseeksContext);
   return meeseeksContext;
 };
