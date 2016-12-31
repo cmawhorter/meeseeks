@@ -43,7 +43,7 @@ Meeseeks.prototype.createContextFromEvent = function(event) {
   var meeseeksContext = {
     name: event.method,
     body: event.body || {},
-    authorization: authorization,
+    authorization: null, //authorization,
     identity: authorization ? authorization.sub : null,
     received: helpers.now(),
     requestId: requestId,
@@ -116,6 +116,3 @@ Meeseeks.prototype._callback = function(meeseeksContext, context, err, res) {
 };
 
 module.exports = Meeseeks;
-
-
-new Meeseeks().createContextFromEvent({});
