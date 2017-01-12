@@ -13,24 +13,24 @@ function Meeseeks(opts) {
   this.opts.name = opts.name || ('meeseeks:' + Math.random());
   this.opts.jwtSigningToken = opts.jwtSigningToken || '';
   this.opts.skipJwtValidation = opts.skipJwtValidation || (process.env.NODE_ENV === 'development');
-  this.opts.logLevel = opts.logLevel || 'debug';
+  this.opts.logLevel = opts.logLevel || (process.env.NODE_ENV === 'development' ? 'debug' : 'info');
   this.opts.requestIdGenerator = opts.requestIdGenerator || RequestId(opts.requestIdOptions || {});
   this.log = Logger(this.opts);
   Object.defineProperty(this, 'handler', {
     value: function(event, context) {
       var meeseeksContext = _this.createContextFromEvent(event);
-      meeseeksContext.log.debug({ event: event }, 'Event Received');
+      meeseeksContext.log.debug({ event: event }, 'event received');
       var origin = { event: event, context: context };
       _this._invoke(meeseeksContext, origin);
     },
   });
   this._listeners = {};
-  this.log.info('Handler "' + this.opts.name + '" Ready');
+  this.log.info('handler "' + this.opts.name + '" ready');
 }
 
 Meeseeks.prototype.define = function(name, definition) {
   if (this._listeners[name]) throw new Error('Meeseeks: Listener already exists for "' + name + '"');
-  this.log.info('Defined "' + name + '"');
+  this.log.info('defined "' + name + '"');
   this._listeners[name] = definition;
 };
 
@@ -60,11 +60,12 @@ Meeseeks.prototype._invoke = function(meeseeksContext, origin) {
   var listener = this._listeners[meeseeksContext.name];
   if (!listener) {
     origin.context.fail(new Error('invalid target "' + meeseeksContext.name + '"'));
-    meeseeksContext.log.warn('No listener exists for "' + meeseeksContext.name + '"');
+    meeseeksContext.log.warn('no listener exists for "' + meeseeksContext.name + '"');
     return;
   }
   var done = this._callback.bind(this, meeseeksContext, origin.context);
-  meeseeksContext.log.debug({ context: meeseeksContext }, 'Invoking "' + meeseeksContext.name + '"');
+  meeseeksContext.log.info('invoking "' + meeseeksContext.name + '"');
+  meeseeksContext.log.debug({ context: meeseeksContext }, 'current context');
   if (typeof listener === 'function') {
     listener(meeseeksContext, done);
   }
@@ -72,7 +73,7 @@ Meeseeks.prototype._invoke = function(meeseeksContext, origin) {
     async.waterfall([
       function validate(next) {
         if (listener.validation) {
-          meeseeksContext.log.debug('Validating');
+          meeseeksContext.log.debug('validating');
           listener.validation(meeseeksContext, function(err) {
             if (err) return next(err);
             next(null);
@@ -84,7 +85,7 @@ Meeseeks.prototype._invoke = function(meeseeksContext, origin) {
       },
       function act(next) {
         if (listener.action) {
-          meeseeksContext.log.debug('Action');
+          meeseeksContext.log.debug('action');
           listener.action(meeseeksContext, next);
         }
         else {
@@ -93,7 +94,7 @@ Meeseeks.prototype._invoke = function(meeseeksContext, origin) {
       },
       function respond() { // act args are designed to be dynamic
         if (listener.response) {
-          meeseeksContext.log.debug('Transforming response');
+          meeseeksContext.log.debug('transforming response');
           listener.response.apply(listener, arguments);
         }
         else {
@@ -105,11 +106,13 @@ Meeseeks.prototype._invoke = function(meeseeksContext, origin) {
 };
 
 Meeseeks.prototype._callback = function(meeseeksContext, context, err, res) {
+  meeseeksContext.log.debug({ context: meeseeksContext }, 'current context');
   if (err) {
-    meeseeksContext.log.warn({ err: err }, 'Completed "' + meeseeksContext.name + '" with error');
+    meeseeksContext.log.warn({ err: err }, 'completed "' + meeseeksContext.name + '" with error');
   }
   else {
-    meeseeksContext.log.debug({ res: res }, 'Completed "' + meeseeksContext.name + '"');
+    meeseeksContext.log.info('completed "' + meeseeksContext.name + '"');
+    meeseeksContext.log.debug({ result: res }, 'result');
   }
   context.done(err, res);
 };
