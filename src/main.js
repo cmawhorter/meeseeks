@@ -1,10 +1,7 @@
 'use strict';
 
-var assert = require('assert');
-var async = require('async');
 var Logger = require('./lib/logger.js');
 var RequestId = require('./lib/request-id.js');
-var auth = require('./lib/auth.js');
 
 function Meeseeks(opts) {
   var _this = this;

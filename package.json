@@ -1,7 +1,11 @@
 {
-  "version": "1.0.0-alpha1",
+  "version": "1.0.0",
   "name": "meeseeks",
   "description": "Simplifies creating AWS Lambda microservices by creating a standard format and handling some of th gruntwork.",
+  "bin": {
+    "meeseeks": "./cli/index.js",
+    "meeseeks-logs": "./cli/logs.js"
+  },
   "author": {
     "name": "Cory Mawhorter",
     "email": "cory.mawhorter@gmail.com",
@@ -15,19 +19,32 @@
     "url": "https://github.com/cmawhorter/meeseeks/issues"
   },
   "license": "MIT",
-  "main": "src/index.js",
-  "engines": {
-    "node": ">= 4.3.0"
+  "main": "dist/meeseeks.umd.js",
+  "module": "dist/meeseeks.es2015.js",
+  "jsnext:main": "dist/meeseeks.es2015.js",
+  "scripts": {
+    "build": "rollup -c rollup.config.js"
   },
   "dependencies": {
-    "async": "^2.0.1",
     "base-x": "^2.0.2",
     "bunyan": "^1.8.5",
-    "jsonwebtoken": "^7.1.7",
     "uuid": "^3.0.1"
   },
   "devDependencies": {
-    "mocha": "*"
+    "archiver": "^1.3.0",
+    "async": "^2.1.4",
+    "babel-plugin-external-helpers": "^6.18.0",
+    "babel-preset-es2015": "^6.18.0",
+    "deep-assign": "^2.0.0",
+    "expect": "*",
+    "mocha": "*",
+    "pbcw": "stampr/pretty-bunyan-cloudwatch-logs#1.0.0",
+    "rollup": "^0.41.1",
+    "rollup-plugin-babel": "^2.7.1",
+    "rollup-plugin-commonjs": "^7.0.0",
+    "rollup-plugin-node-resolve": "^2.0.0",
+    "stream-buffers": "^3.0.1",
+    "yargs": "^6.6.0"
   },
   "keywords": [
     "aws",
