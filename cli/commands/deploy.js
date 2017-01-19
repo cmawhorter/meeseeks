@@ -9,8 +9,8 @@ exports.command = 'deploy';
 exports.desc    = 'Runs build and update in succession';
 exports.builder = deepAssign({}, buildCmd.builder, updateCmd.builder);
 exports.handler = function(argv) {
-  async.waterfall({
-    build:  (next) => buildCmd.handler(argv).then(next, next),
-    update: (next) => updateCmd.handler(argv).then(next, next),
-  }, (err) => console.log('Completed', err ? ' with error ' : '', err ? err.stack : null));
+  async.waterfall([
+    (next) => buildCmd.handler(argv).then(next, next),
+    (next) => updateCmd.handler(argv).then(next, next),
+  ], (err) => process.exit(err ? 1 : 0));
 };

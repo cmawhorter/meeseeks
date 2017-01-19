@@ -1,5 +1,6 @@
 'use strict';
 
+const fs            = require('fs');
 const path          = require('path');
 const streamBuffers = require('stream-buffers');
 const AWS           = require('aws-sdk');
@@ -12,57 +13,65 @@ exports.builder = {
   region: {
     describe:       'AWS region to deploy to. Defaults to $AWS_REGION',
     default:        process.env.AWS_REGION,
-  }
+  },
+  'test': {
+    describe:       'Outputs bundled code to build directory and does not contact AWS',
+    boolean:        true,
+    default:        false,
+  },
 };
 
-function createCodeBundle(next) {
+function createCodeBundle(dist, next) {
   let output = new streamBuffers.WritableStreamBuffer();
   let archive = archiver('zip', {
     store: true,
   });
-  output.on('close', () => next(null, output.getContents()));
+  output.on('finish', () => next(null, output.getContents()));
   archive.on('error', () => next(err));
   archive.pipe(output);
-  archive.directory(path.join(process.cwd(), 'dist/'));
+  archive.directory(dist + '/', '.');
   archive.finalize();
 }
 
 function addCodeParams(params, bufferCode) {
   Object.assign(params, {
     Publish:        true,
-    ZipFile:        bufferCode,
   });
 }
 
 function addConfigParams(params, config) {
   config = config || {};
   Object.assign(params, {
+    FunctionName:   config.name,
     Description:    config.description || '',
-    Handler:        'index.handler',
-    MemorySize:     128,
-    Publish:        true,
-    Role:           new Error('not implemented'), // role arn
-    Runtime:        'nodejs4.3',
-    Timeout:        15,
+    Handler:        config.entry || 'index.handler',
+    MemorySize:     config.memory || 128,
+    Role:           config.role || '', // role arn
+    Runtime:        config.runtime || 'nodejs4.3',
+    Timeout:        config.timeout || 15,
     // VpcConfig: {},
     Environment:    config.environment ? { Variables: config.environment } : null,
   });
 }
 
-function createFunction(lambda, FunctionName, bufferCode, next) {
-  let params = { FunctionName };
-  addConfigParams(params);
+function createFunction(lambda, config, bufferCode, next) {
+  let params = {};
+  addConfigParams(params, config);
   addCodeParams(params, bufferCode);
+  params.Code = {
+    ZipFile:        bufferCode,
+  };
   lambda.createFunction(params, next);
 }
 
-function updateFunction(lambda, FunctionName, bufferCode, next) {
-  let configParams = { FunctionName };
-  addConfigParams(configParams);
+function updateFunction(lambda, config, bufferCode, next) {
+  let configParams = {};
+  addConfigParams(configParams, config);
   lambda.updateFunctionConfiguration(configParams, (err, data) => {
     if (err) return next(err);
-    let codeParams = { FunctionName };
+    let codeParams = { FunctionName: configParams.FunctionName };
     addCodeParams(codeParams, bufferCode);
+    codeParams.ZipFile = bufferCode;
     lambda.updateFunctionCode(codeParams, next);
   });
 }
@@ -74,23 +83,46 @@ function getExistingFunction(lambda, FunctionName, next) {
 
 exports.handler = function(argv) {
   let promise = new Promise((resolve, reject) => {
+    console.log('Update started...');
+    let dist = path.join(process.cwd(), argv.main ? path.dirname(argv.main) : 'dist');
+    if (argv.test) {
+      createCodeBundle(dist, (err, bufferCode) => {
+        if (err) throw err;
+        let bundleZip = path.join(dist, 'bundle.zip');
+        fs.writeFileSync(bundleZip, bufferCode);
+        console.log('Done.  Created ', bundleZip);
+      });
+      return;
+    }
     let lambda = new AWS.Lambda({ region: argv.region });
     waterfall({
       bundle: (state, next) => {
-        createCodeBundle(next);
+        console.log('\t-> Bundling');
+        createCodeBundle(dist, next);
       },
       exists: (state, next) => {
-        getExistingFunction(lambda, functionName, next);
+        console.log('\t-> Checking if new');
+        getExistingFunction(lambda, argv.config.name, next);
       },
       update: (state, next) => {
         if (state.exists) {
-          updateFunction(lambda, functionName, state.bundle, next);
+          console.log('\t-> Updating');
+          updateFunction(lambda, argv.config, state.bundle, next);
         }
         else {
-          createFunction(lambda, functionName, state.bundle, next);
+          console.log('\t-> Creating');
+          createFunction(lambda, argv.config, state.bundle, next);
         }
       },
-    }, (err, state) => err ? reject(err) : resolve());
+    }, (err, state) => {
+      if (err) {
+        console.log('Update completed with error');
+        console.log(err.stack || err);
+        return reject(err);
+      }
+      console.log('Update completed successfully');
+      resolve();
+    });
   });
   return promise;
 };

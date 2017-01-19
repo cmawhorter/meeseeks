@@ -14,8 +14,9 @@ exports.desc    = 'Compiles and transpiles source into a lambda-ready build';
 exports.builder = {};
 exports.handler = function(argv) {
   let promise = new Promise((resolve, reject) => {
+    console.log('Build started...');
     rollup.rollup({
-      entry:          path.join(process.cwd(), 'src/main.js'),
+      entry:          path.join(process.cwd(), argv.source || 'src/main.js'),
       cache:          cache,
       plugins: [
         nodeResolve({
@@ -46,8 +47,9 @@ exports.handler = function(argv) {
       bundle.write({
         format:       'cjs',
         sourceMap:    true,
-        dest:         'dist/index.js',
+        dest:         argv.main || 'dist/index.js',
       });
+      console.log('Build complete.');
       resolve();
     }, reject);
   });
