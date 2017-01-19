@@ -2,7 +2,7 @@
 
 var uuid = require('uuid');
 
-exports = function(request) {
+module.exports = function(request) {
   return {
     "resource": "/{proxy+}",
     "path": "/" + request.params.mock,

@@ -8,9 +8,11 @@ let apigatewayRequestHandler = function(lambdaHandler) {
   return (request, reply) => {
     let context = createContext((err, invocationOutcome) => {
       if (err) {
+        console.log('[Meeseeks] Error Result: ', err.stack || err);
         reply(err);
       }
       else {
+        console.log('[Meeseeks] Success Result: ', invocationOutcome);
         let response = reply(JSON.parse(invocationOutcome.body || 'null'));
         response.type('application/json');
         response.code(invocationOutcome.statusCode);
@@ -25,10 +27,8 @@ let apigatewayRequestHandler = function(lambdaHandler) {
   };
 };
 
-exports = function(lambdaHandler, type) {
-  let server = new Hapi.Server({
-    debug: true,
-  });
+module.exports = function(lambdaHandler, type) {
+  let server = new Hapi.Server();
 
   server.connection({
     port: process.env.PORT || 3000,
@@ -42,7 +42,7 @@ exports = function(lambdaHandler, type) {
     break;
   }
   server.route({
-    method: [ 'OPTIONS', 'GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE' ],
+    method: [ 'OPTIONS', 'GET', 'PUT', 'PATCH', 'POST', 'DELETE' ],
     path: '/{mock*}',
     handler: requestHandler(lambdaHandler),
   });

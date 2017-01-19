@@ -4,7 +4,7 @@ var uuid = require('uuid');
 
 var duration = 90 * 1000;
 
-exports = function(callback) {
+module.exports = function(callback) {
   var end = Date.now() + duration;
   var context = {
     awsRequestId: uuid.v4(),
