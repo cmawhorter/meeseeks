@@ -21,6 +21,14 @@ exports.builder = {
   },
 };
 
+function expandRelativeRole(iam, roleName, next) {
+  let params = { RoleName: roleName };
+  iam.getRole(params, (err, data) => {
+    if (err) return next(err);
+    next(null, data.Role.Arn);
+  });
+}
+
 function createCodeBundle(dist, next) {
   let output = new streamBuffers.WritableStreamBuffer();
   let archive = archiver('zip', {
@@ -39,14 +47,14 @@ function addCodeParams(params, bufferCode) {
   });
 }
 
-function addConfigParams(params, config) {
+function addConfigParams(params, role, config) {
   config = config || {};
   Object.assign(params, {
     FunctionName:   config.name,
     Description:    config.description || '',
     Handler:        config.entry || 'index.handler',
     MemorySize:     config.memory || 128,
-    Role:           config.role || '', // role arn
+    Role:           role,
     Runtime:        config.runtime || 'nodejs4.3',
     Timeout:        config.timeout || 15,
     // VpcConfig: {},
@@ -54,9 +62,9 @@ function addConfigParams(params, config) {
   });
 }
 
-function createFunction(lambda, config, bufferCode, next) {
+function createFunction(lambda, role, config, bufferCode, next) {
   let params = {};
-  addConfigParams(params, config);
+  addConfigParams(params, role, config);
   addCodeParams(params, bufferCode);
   params.Code = {
     ZipFile:        bufferCode,
@@ -64,9 +72,9 @@ function createFunction(lambda, config, bufferCode, next) {
   lambda.createFunction(params, next);
 }
 
-function updateFunction(lambda, config, bufferCode, next) {
+function updateFunction(lambda, role, config, bufferCode, next) {
   let configParams = {};
-  addConfigParams(configParams, config);
+  addConfigParams(configParams, role, config);
   lambda.updateFunctionConfiguration(configParams, (err, data) => {
     if (err) return next(err);
     let codeParams = { FunctionName: configParams.FunctionName };
@@ -96,6 +104,17 @@ exports.handler = function(argv) {
     }
     let lambda = new AWS.Lambda({ region: argv.region });
     waterfall({
+      role: (state, next) => {
+        if (!argv.config.role) return next(new Error('IAM role required'));
+        if (0 === argv.config.role.indexOf('arn:')) {
+          next(null, argv.config.role);
+        }
+        else {
+          console.log('\t-> Expanding relative role');
+          let iam = new AWS.IAM({ region: argv.region });
+          expandRelativeRole(iam, argv.config.role, next);
+        }
+      },
       bundle: (state, next) => {
         console.log('\t-> Bundling');
         createCodeBundle(dist, next);
@@ -107,11 +126,11 @@ exports.handler = function(argv) {
       update: (state, next) => {
         if (state.exists) {
           console.log('\t-> Updating');
-          updateFunction(lambda, argv.config, state.bundle, next);
+          updateFunction(lambda, state.role, argv.config, state.bundle, next);
         }
         else {
           console.log('\t-> Creating');
-          createFunction(lambda, argv.config, state.bundle, next);
+          createFunction(lambda, state.role, argv.config, state.bundle, next);
         }
       },
     }, (err, state) => {
